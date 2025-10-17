@@ -17,6 +17,11 @@ import { renderError } from "../src/common/render.js";
 import { fetchTopLanguages } from "../src/fetchers/top-languages.js";
 import { isLocaleAvailable } from "../src/translations.js";
 
+// Map certain languages to others (e.g., Jupyter Notebook → Python)
+const languageMapping = {
+  "Jupyter Notebook": "Python",
+};
+
 // @ts-ignore
 export default async (req, res) => {
   const {
@@ -43,6 +48,7 @@ export default async (req, res) => {
     hide_progress,
     stats_format,
   } = req.query;
+
   res.setHeader("Content-Type", "image/svg+xml");
 
   const access = guardAccess({
@@ -57,6 +63,7 @@ export default async (req, res) => {
       theme,
     },
   });
+
   if (!access.isPassed) {
     return access.result;
   }
@@ -118,12 +125,22 @@ export default async (req, res) => {
   }
 
   try {
-    const topLangs = await fetchTopLanguages(
+    const topLangsRaw = await fetchTopLanguages(
       username,
       parseArray(exclude_repo),
       size_weight,
       count_weight,
     );
+
+    // Normalize languages according to mapping
+    const topLangs = topLangsRaw.map(lang => {
+      const normalizedLang = languageMapping[lang.name] || lang.name;
+      return {
+        ...lang,
+        name: normalizedLang,
+      };
+    });
+
     const cacheSeconds = resolveCacheSeconds({
       requested: parseInt(cache_seconds, 10),
       def: CACHE_TTL.TOP_LANGS_CARD.DEFAULT,
