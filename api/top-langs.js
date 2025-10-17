@@ -133,12 +133,12 @@ export default async (req, res) => {
     );
 
     // Normalize languages according to mapping
-    const topLangs = topLangsRaw.map(lang => {
-      const normalizedLang = languageMapping[lang.name] || lang.name;
-      return {
-        ...lang,
-        name: normalizedLang,
-      };
+    const topLangs = Object.entries(topLangsRaw).map(([name, value]) => {
+    const normalizedName = languageMapping[name] || name;
+    return {
+      name: normalizedName,
+      value,
+    };
     });
 
     const cacheSeconds = resolveCacheSeconds({
